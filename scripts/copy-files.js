@@ -58,7 +58,7 @@ function createPackageFile() {
     } = packageData;
 
     const minimalPackage = {
-      name: 'material-ui-scrollable-tabs',
+      name: 'material-scrollable-tabs-build',
       author,
       version,
       description,

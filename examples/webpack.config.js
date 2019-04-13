@@ -83,7 +83,7 @@ const config = {
       '.jsx',
     ],
     alias: {
-      'material-ui-scrollable-tabs': path.resolve(__dirname, '../src'),
+      'material-scrollable-tabs-build': path.resolve(__dirname, '../src'),
     },
   },
 };

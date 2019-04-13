@@ -9,10 +9,10 @@ import EventListener from 'react-event-listener';
 import warning from 'warning';
 import scroll from 'scroll';
 import ScrollbarSize from 'react-scrollbar-size';
+import withWidth, {LARGE} from 'material-ui/utils/withWidth';
 import TabTemplate from './TabTemplate';
 import InkBar from './InkBar';
 import ScrollButton from './ScrollButton';
-
 
 const getStyles = (props, context, state) => {
   const {tabType} = props;
@@ -35,7 +35,7 @@ const getStyles = (props, context, state) => {
   };
 };
 
-class Tabs extends React.Component {
+class Tabs extends Component {
   static propTypes = {
     /**
      * Should be used to pass `Tab` components.
@@ -102,6 +102,11 @@ class Tabs extends React.Component {
      * Makes Tabs controllable and selects the tab whose value prop matches this prop.
      */
     value: PropTypes.any,
+    /**
+     * @ignore
+     * passed by withWidth decorator
+     */
+    width: PropTypes.number.isRequired,
   };
 
   static defaultProps = {
@@ -171,7 +176,16 @@ class Tabs extends React.Component {
 
     this.setState(newState);
   }
-
+  componentDidUpdate(prevProps) {
+    /**
+     * If the withWidth decorator changes the viewport size then it's likely the selected tab changed size as well.
+     * This means the indicator will not be the appropriate size any longer.  Force another update to ensure the
+     * indicator renders at the proper size.
+     */
+    if (this.props.width !== prevProps.width) {
+      this.forceUpdate();
+    }
+  }
   tabComponentList = [];
 
   handleLeftScrollClick = () => {
@@ -331,6 +345,7 @@ class Tabs extends React.Component {
       tabTemplate,
       tabTemplateStyle,
       tabType,
+      width,
       ...other
     } = this.props;
 
@@ -367,6 +382,7 @@ class Tabs extends React.Component {
         height: tab.props.height || tabHeight,
         width: (tabType === 'fixed') ? `${fixedWidth}%` : 'auto',
         onClick: this.handleTabClick,
+        isLargeView: (width === LARGE),
         ref: (tabComponent) => {
           this.tabComponentList[index] = tabComponent;
         },
@@ -479,4 +495,4 @@ class Tabs extends React.Component {
   }
 }
 
-export default Tabs;
+export default withWidth()(Tabs);

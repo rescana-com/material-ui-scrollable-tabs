@@ -60,10 +60,6 @@ var _reactScrollbarSize = require('react-scrollbar-size');
 
 var _reactScrollbarSize2 = _interopRequireDefault(_reactScrollbarSize);
 
-var _withWidth = require('material-ui/utils/withWidth');
-
-var _withWidth2 = _interopRequireDefault(_withWidth);
-
 var _TabTemplate = require('./TabTemplate');
 
 var _TabTemplate2 = _interopRequireDefault(_TabTemplate);
@@ -100,8 +96,8 @@ var getStyles = function getStyles(props, context, state) {
   };
 };
 
-var Tabs = function (_Component) {
-  (0, _inherits3.default)(Tabs, _Component);
+var Tabs = function (_React$Component) {
+  (0, _inherits3.default)(Tabs, _React$Component);
 
   function Tabs() {
     var _ref;
@@ -225,6 +221,12 @@ var Tabs = function (_Component) {
        * mounting the tabs container (and therefore mounting the selected tab) we will force an update of
        * the tabs container to cause another render of the indicator with the appropriate size and width.
        */
+      var valueLink = this.getValueLink(this.props);
+      var initialIndex = this.props.initialSelectedIndex;
+
+      this.setState({ // eslint-disable-line react/no-did-mount-set-state
+        selectedIndex: valueLink.value !== undefined ? this.getSelectedIndex(this.props) : initialIndex < this.getTabCount() ? initialIndex : 0
+      });
       this.forceUpdate();
       /**
        * Now that the tab strip has been fully rendered, determine if the scroll buttons should be shown.
@@ -237,24 +239,17 @@ var Tabs = function (_Component) {
     }
   }, {
     key: 'componentWillReceiveProps',
-    value: function componentWillReceiveProps(_ref3) {
-      var initialSelectedIndex = _ref3.initialSelectedIndex;
+    value: function componentWillReceiveProps(newProps, nextContext) {
+      var valueLink = this.getValueLink(newProps);
+      var newState = {
+        muiTheme: nextContext.muiTheme || this.context.muiTheme
+      };
 
-      if (initialSelectedIndex !== this.props.initialSelectedIndex) {
-        this.updateSelectedIndexState(initialSelectedIndex);
+      if (valueLink.value !== undefined) {
+        newState.selectedIndex = this.getSelectedIndex(newProps);
       }
-    }
-  }, {
-    key: 'componentDidUpdate',
-    value: function componentDidUpdate(prevProps) {
-      /**
-       * If the withWidth decorator changes the viewport size then it's likely the selected tab changed size as well.
-       * This means the indicator will not be the appropriate size any longer.  Force another update to ensure the
-       * indicator renders at the proper size.
-       */
-      if (this.props.width !== prevProps.width) {
-        this.forceUpdate();
-      }
+
+      this.setState(newState);
     }
   }, {
     key: 'getSelected',
@@ -282,6 +277,28 @@ var Tabs = function (_Component) {
       return this.getTabs().length;
     }
   }, {
+    key: 'getValueLink',
+    value: function getValueLink(props) {
+      return props.valueLink || {
+        value: props.value,
+        requestChange: props.onChange
+      };
+    }
+  }, {
+    key: 'getSelectedIndex',
+    value: function getSelectedIndex(props) {
+      var valueLink = this.getValueLink(props);
+      var selectedIndex = -1;
+
+      this.getTabs(props).forEach(function (tab, index) {
+        if (valueLink.value === tab.props.value) {
+          selectedIndex = index;
+        }
+      });
+
+      return selectedIndex;
+    }
+  }, {
     key: 'render',
     value: function render() {
       var _this2 = this;
@@ -291,16 +308,18 @@ var Tabs = function (_Component) {
           contentContainerStyle = _props.contentContainerStyle,
           initialSelectedIndex = _props.initialSelectedIndex,
           inkBarStyle = _props.inkBarStyle,
+          onChange = _props.onChange,
           style = _props.style,
           tabItemContainerStyle = _props.tabItemContainerStyle,
           tabTemplate = _props.tabTemplate,
           tabTemplateStyle = _props.tabTemplateStyle,
           tabType = _props.tabType,
-          width = _props.width,
-          other = (0, _objectWithoutProperties3.default)(_props, ['contentContainerClassName', 'contentContainerStyle', 'initialSelectedIndex', 'inkBarStyle', 'style', 'tabItemContainerStyle', 'tabTemplate', 'tabTemplateStyle', 'tabType', 'width']);
+          other = (0, _objectWithoutProperties3.default)(_props, ['contentContainerClassName', 'contentContainerStyle', 'initialSelectedIndex', 'inkBarStyle', 'onChange', 'style', 'tabItemContainerStyle', 'tabTemplate', 'tabTemplateStyle', 'tabType']);
       var prepareStyles = this.context.muiTheme.prepareStyles;
 
       var styles = getStyles(this.props, this.context, this.state);
+      var valueLink = this.getValueLink(this.props);
+      var tabValue = valueLink.value;
       var tabContent = [];
       var fixedWidth = 100 / this.getTabCount();
 
@@ -310,6 +329,8 @@ var Tabs = function (_Component) {
 
       var tabs = this.getTabs().map(function (tab, index) {
         process.env.NODE_ENV !== "production" ? (0, _warning2.default)(tab.type && tab.type.muiName === 'Tab', 'Material-UI: Tabs only accepts Tab Components as children.\n        Found ' + (tab.type.muiName || tab.type) + ' as child number ' + (index + 1) + ' of Tabs') : void 0;
+
+        process.env.NODE_ENV !== "production" ? (0, _warning2.default)(!tabValue || tab.props.value !== undefined, 'Material-UI: Tabs value prop has been passed, but Tab ' + index + '\n        does not have a value prop. Needs value if Tabs is going\n        to be a controlled component.') : void 0;
 
         tabContent.push(tab.props.children ? _react2.default.createElement(tabTemplate || _TabTemplate2.default, {
           key: index,
@@ -324,7 +345,6 @@ var Tabs = function (_Component) {
           height: tab.props.height || tabHeight,
           width: tabType === 'fixed' ? fixedWidth + '%' : 'auto',
           onClick: _this2.handleTabClick,
-          isLargeView: width === _withWidth.LARGE,
           ref: function ref(tabComponent) {
             _this2.tabComponentList[index] = tabComponent;
           }
@@ -424,10 +444,12 @@ var Tabs = function (_Component) {
     }
   }]);
   return Tabs;
-}(_react.Component);
+}(_react2.default.Component);
 
 Tabs.defaultProps = {
   initialSelectedIndex: 0,
+  onChange: function onChange() {},
+  isLargeView: false,
   tabType: 'fixed'
 };
 Tabs.contextTypes = {
@@ -462,6 +484,14 @@ process.env.NODE_ENV !== "production" ? Tabs.propTypes = {
    */
   inkBarStyle: _propTypes2.default.object,
   /**
+   * Indicates that the tab bar is rendered on a large view and should use the wider stylings.
+   */
+  isLargeView: _propTypes2.default.bool,
+  /**
+   * Called when the selected value change.
+   */
+  onChange: _propTypes2.default.func,
+  /**
    * Override the inline-styles of the root element.
    */
   style: _propTypes2.default.object,
@@ -488,9 +518,8 @@ process.env.NODE_ENV !== "production" ? Tabs.propTypes = {
    */
   tabType: _propTypes2.default.oneOf(['fixed', 'scrollable', 'scrollable-buttons']),
   /**
-   * @ignore
-   * passed by withWidth decorator
+   * Makes Tabs controllable and selects the tab whose value prop matches this prop.
    */
-  width: _propTypes2.default.number.isRequired
+  value: _propTypes2.default.any
 } : void 0;
-exports.default = (0, _withWidth2.default)()(Tabs);
+exports.default = Tabs;
